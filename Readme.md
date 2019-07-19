@@ -1,5 +1,8 @@
 A system to collect bug reports and feedback from players direclty on the game server.
 
+Requires [DataManager](https://github.com/tes3mp-scripts/DataManager) and [GuiFramework](https://github.com/tes3mp-scripts/GuiFramework)!
+
+
 Adds commands `/ticket` and `/tickets` that allow to create a new report ticket or few a list of the respecitvely.
 
 Configuration
