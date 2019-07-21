@@ -14,6 +14,9 @@ SupportTickets.config = DataManager.loadConfiguration(SupportTickets.scriptName,
 
 SupportTickets.openTickets = {}
 
+SupportTickets.adminActions = {}
+SupportTickets.adminActionButtons = {}
+
 --Utility functions
 SupportTickets.getPlayerName = function(pid)
     return Players[pid].data.login.name:lower()
@@ -77,7 +80,7 @@ SupportTickets.showCreateTicket = function(pid, data)
         GuiFramework.InputDialog({
             pid = pid,
             name = "SupportTicket_InputTicketName",
-            label = "Input a short description",
+            label = SupportTickets.config.GUI.createTicket.nameLabel,
             callback = SupportTickets.callbackCreateTicket,
             parameters = data
         })
@@ -86,7 +89,7 @@ SupportTickets.showCreateTicket = function(pid, data)
         GuiFramework.InputDialog({
             pid = pid,
             name = "SupportTicket_InputTicketText",
-            label = "Input a detailed description",
+            label = SupportTickets.config.GUI.createTicket.textLabel,
             callback = SupportTickets.callbackCreateTicket,
             parameters = data
         })
@@ -97,8 +100,8 @@ SupportTickets.showCreateTicket = function(pid, data)
         GuiFramework.CustomMessageBox({
             pid = pid,
             name = "SupportTicket_InputTicketConfirmation",
-            label = "Ticket was successfully created!",
-            buttons = {"Ok"}
+            label = SupportTickets.config.GUI.createTicket.confirmLabel,
+            buttons = {SupportTickets.config.GUI.ok}
         })
     end
 end
@@ -125,21 +128,28 @@ SupportTickets.showAdminTicket = function(pid, id)
     local returnValues = {}
 
     if ticket.open then
-        label = "Open "
-        table.insert(buttons, "Close ticket")
+        label = string.format(
+            SupportTickets.config.GUI.showAdminTicket.label.open,
+            ticket.name, ticket.playerName, SupportTickets.getDateString(ticket), ticket.text
+        )
+        table.insert(buttons, SupportTickets.config.GUI.showAdminTicket.buttons.close)
         table.insert(returnValues, "close")
     else
-        label = "Closed "
-        table.insert(buttons, "Open ticket")
+        label = string.format(
+            SupportTickets.config.GUI.showAdminTicket.label.closed,
+            ticket.name, ticket.playerName, SupportTickets.getDateString(ticket), ticket.text
+        )
+        table.insert(buttons, SupportTickets.config.GUI.showAdminTicket.buttons.open)
         table.insert(returnValues, "open")
     end
-    
-    label = label .. "ticket: \"" .. ticket.name ..
-        "\" by " .. ticket.playerName .. " at " .. SupportTickets.getDateString(ticket) .. "\n" ..
-        ticket.text
 
-    table.insert(buttons, "OK")
-    table.insert(returnValues, "ok") 
+    for i, buttonLabel in ipairs(SupportTickets.adminActionButtons) do
+        table.insert(buttons, buttonLabel)
+        table.insert(returnValues, i)
+    end
+
+    table.insert(buttons, SupportTickets.config.GUI.ok)
+    table.insert(returnValues, "ok")
 
     GuiFramework.CustomMessageBox({
         pid = pid,
@@ -152,15 +162,27 @@ SupportTickets.showAdminTicket = function(pid, id)
     })
 end
 
+SupportTickets.registerAdminAction = function(buttonLabel, callback)
+    table.insert( SupportTickets.adminActions, callback )
+    table.insert( SupportTickets.adminActionButtons, buttonLabel )
+end
+
 SupportTickets.callbackAdminTicket = function(pid, name, input, value, id)
+    if type(value) == "number" then
+        local callback = SupportTickets.adminActions[value]
+        if callback ~= nil then
+            callback(pid, SupportTickets.data.tickets[id])
+        end
+        return
+    end
     if value == "close" then
         SupportTickets.data.tickets[id].open = false
 
         GuiFramework.CustomMessageBox({
             pid = pid,
             name = "SupportTicket_AdminTicketClose",
-            label = "Ticket closed",
-            buttons = {"Back", "Ok"},
+            label = SupportTickets.config.GUI.showAdminTicket.alerts.closed,
+            buttons = {SupportTickets.config.GUI.showAdminTicket.buttons.back, SupportTickets.config.GUI.ok},
             returnValues = {"back", "ok"},
             callback = SupportTickets.callbackAdminTicket,
             parameters = id
@@ -171,8 +193,8 @@ SupportTickets.callbackAdminTicket = function(pid, name, input, value, id)
         GuiFramework.CustomMessageBox({
             pid = pid,
             name = "SupportTicket_AdminTicketOpen",
-            label = "Ticket opened",
-            buttons = {"Back", "Ok"},
+            label = SupportTickets.config.GUI.showAdminTicket.alerts.open,
+            buttons = {SupportTickets.config.GUI.showAdminTicket.buttons.back, SupportTickets.config.GUI.ok},
             returnValues = {"back", "ok"},
             callback = SupportTickets.callbackAdminTicket,
             parameters = id
@@ -191,18 +213,20 @@ SupportTickets.showPlayerTicket = function(pid, id)
     local returnValues = {}
 
     if ticket.open then
-        label = "Open "
-        table.insert(buttons, "Close ticket")
+        label = string.format(
+            SupportTickets.config.GUI.showPlayerTicket.label.open,
+            ticket.name, ticket.playerName, SupportTickets.getDateString(ticket), ticket.text
+        )
+        table.insert(buttons, SupportTickets.config.GUI.showPlayerTicket.buttons.close)
         table.insert(returnValues, "close")
     else
-        label = "Closed "
+        label = string.format(
+            SupportTickets.config.GUI.showPlayerTicket.label.closed,
+            ticket.name, ticket.playerName, SupportTickets.getDateString(ticket), ticket.text
+        )
     end
-    
-    label = label .. "ticket: \"" .. ticket.name ..
-        "\" by " .. ticket.playerName .. " at " .. SupportTickets.getDateString(ticket) .. "\n" ..
-        ticket.text
 
-    table.insert(buttons, "OK")
+    table.insert(buttons, SupportTickets.config.GUI.ok)
     table.insert(returnValues, "ok") 
 
     GuiFramework.CustomMessageBox({
@@ -223,8 +247,8 @@ SupportTickets.callbackPlayerTicket = function(pid, name, input, value, id)
         GuiFramework.CustomMessageBox({
             pid = pid,
             name = "SupportTicket_PlayerTicketClose",
-            label = "Ticket closed",
-            buttons = {"Back", "Ok"},
+            label = SupportTickets.config.GUI.showPlayerTicket.alerts.closed,
+            buttons = {SupportTickets.config.GUI.showPlayerTicket.buttons.back, SupportTickets.config.GUI.ok},
             returnValues = {"back", "ok"},
             callback = SupportTickets.callbackPlayerTicket,
             parameters = id
@@ -249,7 +273,10 @@ SupportTickets.renderTicketList = function(ids, page)
     for i = from, to do
         local id = ids[i]
         local ticket = SupportTickets.data.tickets[id]
-        table.insert( rows, ( ticket.open and "O" or "X" ) .. " " .. ticket.name .. '" ' .. SupportTickets.getDateString(ticket) )
+        table.insert( rows, string.format(
+            ticket.open and SupportTickets.config.GUI.renderTickets.rows.open or SupportTickets.config.GUI.renderTickets.rows.closed,
+            ticket.name, SupportTickets.getDateString(ticket)
+        ))
         table.insert( returnValues, id )
     end
 
@@ -260,7 +287,7 @@ SupportTickets.renderTicketList = function(ids, page)
 
     --Add previous page button if necsesary
     if page > 1 then
-        table.insert( rows, "-==Previous page==-" )
+        table.insert( rows, SupportTickets.config.GUI.renderTickets.buttons.previous )
         table.insert( returnValues, { page = page, change = -1 } )
     else
         table.insert( rows, "" )
@@ -269,7 +296,7 @@ SupportTickets.renderTicketList = function(ids, page)
 
     --Add next page button if necsesary
     if page < totalPages then
-        table.insert( rows, "-==Next page==-" )
+        table.insert( rows, SupportTickets.config.GUI.renderTickets.buttons.next )
         table.insert( returnValues, { page = page, change = 1 } )
     else
         table.insert( rows, "" )
@@ -278,7 +305,7 @@ SupportTickets.renderTicketList = function(ids, page)
 
     --Add First page button if necessary+
     if page > 1 then
-        table.insert( rows, "-==First Page==-" )
+        table.insert( rows, SupportTickets.config.GUI.renderTickets.buttons.first )
         table.insert( returnValues, { page = page, change = -100 } )
     else
         table.insert( rows, "" )
@@ -287,7 +314,7 @@ SupportTickets.renderTicketList = function(ids, page)
 
     --Add last page button if necessary+
     if page < totalPages then
-        table.insert( rows, "-==Last Page==-" )
+        table.insert( rows, SupportTickets.config.GUI.renderTickets.buttons.last )
         table.insert( returnValues, { page = page, change = 100 } )
     else
         table.insert( rows, "" )
@@ -317,7 +344,7 @@ SupportTickets.showPlayerTickets = function(pid, page, playerName)
         GuiFramework.CustomMessageBox({
             pid = pid,
             name = "SupportTickets_PlayerTicketsWrongName",
-            label = string.format("No tickets found for %s!", playerName),
+            label = string.format(SupportTickets.config.GUI.showPlayerTickets.alerts.noTickets, playerName),
             buttons = {"OK"}
         })
         return
@@ -330,7 +357,7 @@ SupportTickets.showPlayerTickets = function(pid, page, playerName)
     GuiFramework.ListBox({
         pid = pid,
         name = "SupportTickets_PlayerTickets",
-        label = string.format("%s's tickets %d/%d", playerName, page, totalPages),
+        label = string.format(SupportTickets.config.GUI.showPlayerTickets.label, playerName, page, totalPages),
         rows = render.rows,
         returnValues = render.returnValues,
         callback = SupportTickets.callbackPlayerTickets,
@@ -398,7 +425,7 @@ SupportTickets.showOpenTickets = function(pid, page)
         GuiFramework.CustomMessageBox({
             pid = pid,
             name = "SupportTickets_OpenTickets",
-            label = "No open tickets!",
+            label = SupportTickets.config.GUI.showOpenTickets.alerts.noTickets,
             buttons = {"Ok"}
         })
 
@@ -423,7 +450,7 @@ SupportTickets.showOpenTickets = function(pid, page)
         GuiFramework.CustomMessageBox({
             pid = pid,
             name = "SupportTickets_OpenTickets",
-            label = "No open tickets on this page!",
+            label = SupportTickets.config.GUI.showOpenTickets.alerts.emptyPage,
             buttons = {"Ok"}
         })
 
@@ -438,7 +465,7 @@ SupportTickets.showOpenTickets = function(pid, page)
     GuiFramework.ListBox({
         pid = pid,
         name = "SupportTickets_OpenTickets",
-        label = string.format("Tickets %d/%d", page, totalPages),
+        label = string.format(SupportTickets.config.GUI.showOpenTickets.label, page, totalPages),
         rows = render.rows,
         returnValues = render.returnValues,
         callback = SupportTickets.callbackOpenTickets,
@@ -504,3 +531,5 @@ customEventHooks.registerHandler("OnServerExit", function(eventStatus)
     DataManager.saveData(SupportTickets.scriptName, SupportTickets.data)
     DataManager.saveConfiguration(SupportTickets.scriptName, SupportTickets.config)
 end)
+
+return SupportTickets

@@ -2,8 +2,11 @@ A system to collect bug reports and feedback from players direclty on the game s
 
 Requires [DataManager](https://github.com/tes3mp-scripts/DataManager) and [GuiFramework](https://github.com/tes3mp-scripts/GuiFramework)!
 
-
 Adds commands `/ticket` and `/tickets` that allow to create a new report ticket or few a list of the respecitvely.
+
+A `teleportActions.lua` module is included, which will allow admins to teleport to location in which a ticket was made, or to its author. To enable it, require it in `customScripts.lua` by adding a `require("custom.SupportTickets.teleportActions")` line.
+
+Keep in mind that for any such modules to work, SupportTickets itself should be assigned to a global variable with the same name.
 
 Configuration
 =====
@@ -19,3 +22,7 @@ Commands
 * `/tickets <playerName>` only available to admins, shows them list of all tickets made by player with name `<playerName>`.
 
 All ticket lists are sorted in descending order, so newest tickets appear first. You can simply go to the last page if you wish to see the earliest tickets first.
+
+Custom admin actions
+====
+Add new buttons to the admin ticket menu by using the `registerAdminAction(buttonLabel, callback)` function. You can find an example in `teleportActions.lua`.
